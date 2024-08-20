@@ -95,13 +95,22 @@ def calcular_estadisticas(datos):
     cuartil3 = round(statistics.median(datos_superiores), 4)  # Calcula el tercer cuartil con 4 decimales.
     moda = statistics.multimode(datos)  # Calcula la moda.
 
-    # Si hay más de una moda, calcular la frecuencia de cada una
-    frecuencias_moda = {}
-    if len(moda) > 1:
-        for m in moda:
-            frecuencias_moda[m] = datos.count(m)
+    # Calcular frecuencias de cada valor
+    frecuencias = {valor: datos.count(valor) for valor in set(datos)}
+    frecuencia_max = max(frecuencias.values())
+    
+    # Verificar si todos los valores tienen la misma frecuencia
+    if all(frecuencia == frecuencia_max for frecuencia in frecuencias.values()):
+        moda = "No hay moda"
+        frecuencias_moda = {"Todos los valores tienen frecuencia": frecuencia_max}
     else:
-        frecuencias_moda[moda[0]] = datos.count(moda[0])
+        # Si hay más de una moda, mostrar la frecuencia solo una vez
+        frecuencias_moda = {}
+        if len(moda) > 1:
+            for m in moda:
+                frecuencias_moda[m] = frecuencia_max
+        else:
+            frecuencias_moda[moda[0]] = frecuencia_max
 
     varianza_muestral = sum((xi - media) ** 2 for xi in datos) / (n - 1)  # Calcula la varianza muestral.
     varianza_poblacional = sum((xi - media) ** 2 for xi in datos) / n  # Calcula la varianza poblacional.
@@ -111,41 +120,56 @@ def calcular_estadisticas(datos):
     return media, mediana, cuartil1, cuartil3, moda, frecuencias_moda, desvio_muestral, desvio_poblacional  # Retorna cada cálculo previo.
 
 def calcular_frecuencias(datos):
-    n = len(datos)
-    datos.sort()  # Ordena los datos.
+    n = len(datos) 
+    datos.sort()  #Ordena los datos.
 
-    # Frecuencia Absoluta:
-    frec_abs = {}  # Definimos un diccionario vacío para la frecuencia absoluta.
+    #Frecuencia Absoluta:
+    #Número de veces en que aparece repetido un mismo valor de la variable
+    frec_abs = {}  #Definimos un diccionario vacio para la frecuencia absoluta.
     for dato in datos:
         if dato in frec_abs:
-            frec_abs[dato] += 1  # Incrementa el contador si el dato está en el diccionario.
+            frec_abs[dato] += 1  # Incrementa el contador si el dato esta en el diccionario.
         else:
             frec_abs[dato] = 1  # Inicializa el contador si el dato no está en el diccionario.
 
-    # Frecuencia Relativa:
-    frec_rel = {k: round(v / n, 4) for k, v in frec_abs.items()}
+    #Frecuencia Relativa:
+    #Es el cociente entre su frecuencia absoluta y la suma de todas las frecuencias absolutas.
+    frec_rel = {}
+    for k, v in frec_abs.items():
+        frec_rel[k] = round(v / n, 4)  # Calcula la frecuencia relativa.
 
-    # Frecuencia Porcentual:
-    frec_porcentual = {k: round(v * 100, 2) for k, v in frec_rel.items()}
+    #Frecuencia porcentual
+    #Es igual a la frecuencia relativa multiplicada por 100. 
+    #Expresa el porcentaje que el valor de una variable tiene en el total de observaciones.
+    frec_porcentual = {}
+    for k, v in frec_rel.items():
+        frec_porcentual[k] = round(v * 100, 2) # Calcula la frecuencia porcentual.
 
-    # Frecuencia Absoluta Acumulada:
-    frec_abs_acum = {}
+    #Frecuencia absoluta acumulada
+    #Se obtiene sumando todas las frecuencias absolutas de las variables que le anteceden más la frecuencia absoluta de dicha variable.
+    frec_abs_acum = {}  #Definimos un diccionario vacio para la frecuencia absoluta acumulada.
     contador = 0
     for k in frec_abs:
-        contador += frec_abs[k]
-        frec_abs_acum[k] = contador
+        contador += frec_abs[k]  # Acumula las frecuencias absolutas.
+        frec_abs_acum[k] = contador  # Asigna la frecuencia acumulada al dato.
 
-    # Frecuencia Relativa Acumulada:
-    frec_rel_acum = {}
+    #Frecuencia relativa acumulada
+    #Se obtiene sumando todas las frecuencias relativas que la anteceden más la frecuencia relativa de dicha variable.
+    frec_rel_acum = {}  #Definimos un diccionario vacio para la frecuencia relativa acumulada.
     contador = 0
     for k in frec_rel:
-        contador += frec_rel[k]
-        frec_rel_acum[k] = round(contador, 4)
+        contador += frec_rel[k]  # Acumula las frecuencias relativas.
+        frec_rel_acum[k] = round(contador, 4)  # Asigna la frecuencia relativa acumulada al dato.
 
-    # Frecuencia Porcentual Acumulada:
-    frec_porcentual_acum = {k: round(v * 100, 2) for k, v in frec_rel_acum.items()}
+    #Frecuencia porcentual acumulada
+    #Se obtiene sumando todas las frecuencias porcentuales de las variables que la anteceden
+    #más la frecuencia porcentual de dicha variable.
 
-    return frec_abs, frec_rel, frec_porcentual, frec_abs_acum, frec_rel_acum, frec_porcentual_acum
+    frec_porcentual_acum = {}
+    for k, v in frec_rel_acum.items():
+        frec_porcentual_acum[k] = round(v * 100, 2) # Calcula la frecuencia porcentual acumulada.
+    
+    return frec_abs, frec_rel, frec_porcentual, frec_abs_acum, frec_rel_acum, frec_porcentual_acum  # Retorna todas las frecuencias calculadas.
 
 def mostrar_menu_principal():
     print("\nMenú principal:")
@@ -212,13 +236,15 @@ def ejecutar_estadistica_descriptiva():
         elif opcion == 4:
             print(f"\nEl cuartil 3 es: {cuartil3}")
         elif opcion == 5:
-            print(f"\nLa moda es: {moda}")
-            if len(frecuencias_moda) > 1:
-                print("Frecuencias de las modas:")
-                for m, freq in frecuencias_moda.items():
-                    print(f"Moda: {m}, Frecuencia: {freq}")
+            if isinstance(frecuencias_moda, dict):
+                if len(frecuencias_moda) > 1:
+                    modas = ', '.join(map(str, frecuencias_moda.keys()))
+                    frecuencia = list(frecuencias_moda.values())[0]
+                    print(f"\nLas modas son {modas}. Su frecuencia es {frecuencia}")
+                else:
+                    print(f"\nNo hay moda. La frecuencia de todos los valores es {list(frecuencias_moda.values())[0]}")
             else:
-                print(f"Frecuencia de la moda: {list(frecuencias_moda.values())[0]}")
+                print(frecuencias_moda)
         elif opcion == 6:
             print(f"\nFrecuencia Absoluta: {frec_abs}")
         elif opcion == 7:
