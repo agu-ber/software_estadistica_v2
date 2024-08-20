@@ -13,7 +13,7 @@ def factorial(x):
 def coeficiente_binomial(n, k):
     return factorial(n) // (factorial(k) * factorial(n - k))
 
-def formula_binomial(n, k, p):
+def formula_binomial(n, p, k):
     coeficiente = coeficiente_binomial(n, k)
     distribucion_binomial = coeficiente * (p ** k) * ((1 - p) ** (n - k))
     return round(distribucion_binomial, 4)
@@ -22,18 +22,25 @@ def formula_poisson(x, u):
     distribucion_poisson = ((EULER ** -u) * (u**x)) / factorial(x)
     return round(distribucion_poisson, 4)
 
+def formula_hipergeometrica(M, k, n, N):
+    coeficiente1 = coeficiente_binomial(M, k) 
+    coeficiente2 = coeficiente_binomial(N-M, n-k)
+    coeficiente3 = coeficiente_binomial(N, n)
+    distribucion_hipergeometrico = (coeficiente1 * coeficiente2) / coeficiente3
+    return round(distribucion_hipergeometrico, 4)
+
 # Cálculos para probabilidades de la distribución binomial
 def calcular_probabilidades_binomial(n, p, k, tipo_calculo):
     if tipo_calculo == 1:  # P(X = k)
-        probabilidad = formula_binomial(n, k, p)
+        probabilidad = formula_binomial(n, p, k)
     elif tipo_calculo == 2:  # P(X < k)
-        probabilidad = sum(formula_binomial(n, i, p) for i in range(k))
+        probabilidad = sum(formula_binomial(n, p, i) for i in range(k))
     elif tipo_calculo == 3:  # P(X ≤ k)
-        probabilidad = sum(formula_binomial(n, i, p) for i in range(k + 1))
+        probabilidad = sum(formula_binomial(n, p, i) for i in range(k + 1))
     elif tipo_calculo == 4:  # P(X > k)
-        probabilidad = sum(formula_binomial(n, i, p) for i in range(k + 1, n + 1))
+        probabilidad = sum(formula_binomial(n, p, i) for i in range(k + 1, n + 1))
     elif tipo_calculo == 5:  # P(X ≥ k)
-        probabilidad = sum(formula_binomial(n, i, p) for i in range(k, n + 1))
+        probabilidad = sum(formula_binomial(n, p, i) for i in range(k, n + 1))
 
     return round(probabilidad, 4), round(probabilidad * 100, 2)  # Retorna en decimal y porcentaje.
 
@@ -51,6 +58,21 @@ def calcular_probabilidades_poisson(x, u, tipo_calculo):
         probabilidad = sum(formula_poisson(i, u) for i in range(x, int(u * 10)))  # Rango ampliado
 
     return round(probabilidad, 4), round(probabilidad * 100, 2)  # Retorna en decimal y porcentaje.
+
+# Cálculos para probabilidades de la distribución hipergeométrica
+def calcular_probabilidades_hipergeometrica(M, k, n, N, tipo_calculo):
+    if tipo_calculo == 1: # P(X = k)
+        probabilidad = formula_hipergeometrica(M, k, n, N)
+    elif tipo_calculo == 2: # P(X < k)
+        probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k))
+    elif tipo_calculo == 3: # P(X ≤ k)
+        probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k + 1))
+    elif tipo_calculo == 4: # P(X > k)
+        probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k + 1, min(n, M))) # Se calcula el mínimo entre el tamaño de la muestra y el número de éxitos en la población
+    elif tipo_calculo == 5: # P(X ≥ k)
+        probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k, min(n, M)))
+
+    return round(probabilidad, 4), round(probabilidad * 100, 2)
 
 def convertir_datos(datos):
     datos_lista = datos.split(",")  # Divide la cadena en una lista donde cada elemento es se separa por una coma.
@@ -152,41 +174,23 @@ def mostrar_menu_probabilidad():
     print("\nMenú de Probabilidad:")
     print("1. Distribución Binomial")
     print("2. Distribución Poisson")
+    print("3. Distribución Hipergeométrica")
     print("0. Volver al menú principal")
 
-def mostrar_menu_probabilidad_binomial():
-    print("\nCálculo de Distribución Binomial:")
+def mostrar_menu_probabilidad_especifica(tipo_distribucion):
+    if tipo_distribucion == 'binomial':
+        print("\nCálculo de Distribución Binomial:")
+    elif tipo_distribucion == 'poisson':
+        print("\nCálculo de Distribución Poisson:")
+    elif tipo_distribucion == 'hipergeometrica':
+        print("\nCálculo de Distribución Hipergeométrica:")
+
     print("1. P(X = k)")
     print("2. P(X < k)")
     print("3. P(X ≤ k)")
     print("4. P(X > k)")
     print("5. P(X ≥ k)")
     print("0. Volver al menú de probabilidad")
-
-def mostrar_menu_probabilidad_poisson():
-    print("\nCálculo de Distribución Poisson:")
-    print("1. P(X = k)")
-    print("2. P(X < k)")
-    print("3. P(X ≤ k)")
-    print("4. P(X > k)")
-    print("5. P(X ≥ k)")
-    print("0. Volver al menú de probabilidad")
-
-def mostrar_resultados_estadistica(media, mediana, cuartil1, cuartil3, moda, frecuencias_moda, desvio_muestral, desvio_poblacional):
-    print("\nResultados:")
-    print(f"Media: {media}")
-    print(f"Mediana: {mediana}")
-    print(f"Cuartil 1: {cuartil1}")
-    print(f"Cuartil 3: {cuartil3}")
-    print(f"Moda: {moda}")
-    if len(frecuencias_moda) > 1:
-        print("Frecuencias de las modas:")
-        for m, freq in frecuencias_moda.items():
-            print(f"Moda: {m}, Frecuencia: {freq}")
-    else:
-        print(f"Frecuencia de la moda: {list(frecuencias_moda.values())[0]}")
-    print(f"Desvío Estándar Muestral: {desvio_muestral}")
-    print(f"Desvío Estándar Poblacional: {desvio_poblacional}")
 
 def ejecutar_estadistica_descriptiva():
     datos = input("Ingrese los datos separados por comas (ej. 1,2,3,4): ")
@@ -244,12 +248,12 @@ def ejecutar_probabilidad():
         opcion_probabilidad = int(input("Seleccione una opción: "))
 
         if opcion_probabilidad == 1:
-            n = int(input("Ingrese el número de ensayos (n): "))
+            n = int(input("\nIngrese el número de ensayos (n): "))
             p = float(input("Ingrese la probabilidad de éxito en cada ensayo (p): "))
             k = int(input("Ingrese el número de éxitos deseados (k): "))
 
             while True:
-                mostrar_menu_probabilidad_binomial()
+                mostrar_menu_probabilidad_especifica('binomial')
                 opcion_binomial = int(input("Seleccione una opción: "))
 
                 if opcion_binomial == 0:
@@ -263,11 +267,11 @@ def ejecutar_probabilidad():
                     break
 
         elif opcion_probabilidad == 2:
-            x = int(input("Ingrese el número de ocurrencias (x): "))
+            x = int(input("\nIngrese el número de ocurrencias (x): "))
             u = float(input("Ingrese el número promedio de ocurrencias o esperanza (λ): "))
 
             while True:
-                mostrar_menu_probabilidad_poisson()
+                mostrar_menu_probabilidad_especifica('poisson')
                 opcion_poisson = int(input("Seleccione una opción: "))
 
                 if opcion_poisson == 0:
@@ -277,6 +281,26 @@ def ejecutar_probabilidad():
                 print(f"\nProbabilidad: {probabilidad_decimal} ({probabilidad_porcentaje}%)")
 
                 continuar = input("\n¿Desea realizar otro cálculo con la distribución Poisson? (s/n): ").lower()
+                if continuar != 's':
+                    break
+
+        elif opcion_probabilidad == 3:
+            N = int(input("\nIngrese el tamaño de la población (N): "))
+            M = int(input("Ingrese cantidad de éxitos en la población (M): "))
+            n = int(input("Ingrese el tamaño de la muestra (n): "))
+            k = int(input("Ingrese cantidad de éxitos buscados en la muestra (K): "))
+
+            while True:
+                mostrar_menu_probabilidad_especifica('hipergeometrica')
+                opcion_hipergeometrica = int(input("Seleccione una opción: "))
+
+                if opcion_hipergeometrica == 0:
+                    break
+                    
+                probabilidad_decimal, probabilidad_porcentaje = calcular_probabilidades_hipergeometrica(M, k, n, N, opcion_hipergeometrica)
+                print(f"\nProbabilidad: {probabilidad_decimal} ({probabilidad_porcentaje}%)")
+
+                continuar = input("\n¿Desea realizar otro cálculo con la distribución hipergeométrica? (s/n): ").lower()
                 if continuar != 's':
                     break
 
