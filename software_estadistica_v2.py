@@ -186,8 +186,10 @@ def calcular_estadisticas(datos):
     varianza_poblacional = sum((xi - media) ** 2 for xi in datos) / n  # Calcula la varianza poblacional.
     desvio_muestral = round(varianza_muestral ** 0.5, 4)  # Calcula el desvío estándar muestral con 4 decimales.
     desvio_poblacional = round(varianza_poblacional ** 0.5, 4)  # Calcula el desvío estándar poblacional con 4 decimales.
-    
-    return media, mediana, cuartil1, cuartil3, moda, frecuencias_moda, desvio_muestral, desvio_poblacional  # Retorna cada cálculo previo.
+    cuarto_momento = sum((xi - media) ** 4 for xi in datos) / n
+    curtosis = round(cuarto_momento / (desvio_poblacional ** 4) - 3, 4)
+
+    return media, mediana, cuartil1, cuartil3, moda, frecuencias_moda, desvio_muestral, desvio_poblacional, curtosis  # Retorna cada cálculo previo.
 
 def calcular_frecuencias(datos):
     n = len(datos) 
@@ -263,6 +265,7 @@ def mostrar_menu_estadistica():
     print("11. Frecuencia Porcentual Acumulada")
     print("12. Desvío Estándar Muestral")
     print("13. Desvío Estándar Poblacional")
+    print("14. Coeficiente de Curtosis")
     print("0. Volver al menú principal")
 
 def mostrar_menu_probabilidad():
@@ -292,7 +295,7 @@ def ejecutar_estadistica_descriptiva():
     datos = input("Ingrese los datos separados por comas (ej. 1,2,3,4): ")
     datos_convertidos = convertir_datos(datos)
 
-    media, mediana, cuartil1, cuartil3, moda, frecuencias_moda, desvio_muestral, desvio_poblacional = calcular_estadisticas(datos_convertidos)
+    media, mediana, cuartil1, cuartil3, moda, frecuencias_moda, desvio_muestral, desvio_poblacional, curtosis = calcular_estadisticas(datos_convertidos)
     frec_abs, frec_rel, frec_porcentual, frec_abs_acum, frec_rel_acum, frec_porcentual_acum = calcular_frecuencias(datos_convertidos)
 
     while True:
@@ -335,6 +338,15 @@ def ejecutar_estadistica_descriptiva():
                 print(f"\nEl Desvío Estándar Muestral es: {desvio_muestral}")
             elif opcion_estadistica == '13':
                 print(f"\nEl Desvío Estándar Poblacional es: {desvio_poblacional}")
+            elif opcion_estadistica == '14':
+                if curtosis < 0:
+                    interpretacion = "Platicúrtica"
+                elif curtosis == 0:
+                    interpretacion = "Mesocúrtica"
+                elif curtosis > 0:
+                    interpretacion = "Leptocúrtica"    
+                
+                print(f"\nEl coeficiente de curtosis es: {curtosis:.4f} ({interpretacion})")
             elif opcion_estadistica == '0':
                 return  # Salir de la función y volver al menú principal
             else:
