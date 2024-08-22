@@ -1,4 +1,5 @@
 import statistics  # Importa el módulo statistics para realizar cálculos estadísticos.
+import math
 
 # Constante de Euler con 20 decimales
 EULER = 2.71828182845904523536
@@ -28,6 +29,73 @@ def formula_hipergeometrica(M, k, n, N):
     coeficiente3 = coeficiente_binomial(N, n)
     distribucion_hipergeometrico = (coeficiente1 * coeficiente2) / coeficiente3
     return round(distribucion_hipergeometrico, 4)
+
+def generar_tabla_z(incremento=0.01):
+    tabla_z = {}
+    z = -4
+    while z <= 4:
+        tabla_z[round(z, 2)] = round(0.5 * (1 + math.erf(z / math.sqrt(2))), 6)
+        z += incremento
+    return tabla_z
+
+def calcular_valor_z(m, s, x):
+    valor_z = (x - m) / s
+    return valor_z
+
+def calcular_probabilidades_acumuladas(z):
+    tabla_z = generar_tabla_z()
+
+    if z in tabla_z:
+        probabilidad = tabla_z[z]
+ 
+    elif z < -4:
+        probabilidad = 0
+    elif z > 4:
+        probabilidad = 1
+    
+    elif z in range(-4,5):
+        # Encontrar los dos z más cercanos para interpolación
+        lower_z = max(key for key in tabla_z if key < z)
+        upper_z = min(key for key in tabla_z if key > z)
+
+        # Valores correspondientes de probabilidad
+        lower_p = tabla_z[lower_z]
+        upper_p = tabla_z[upper_z]
+
+        # Interpolación lineal
+        slope = (upper_p - lower_p) / (upper_z - lower_z)
+        interpolated_p = lower_p + slope * (z - lower_z)    
+
+        probabilidad = interpolated_p
+
+    return probabilidad
+
+def calcular_distribucion_normal(m, s, datos_x):
+    prev_probabilidad = None
+    resultados = []
+
+    for x in datos_x:
+        z_value = calcular_valor_z(m, s, x)
+        probabilidad = calcular_probabilidades_acumuladas(z_value)
+
+        resultado = {
+            "z_value": z_value,
+            "probabilidad": probabilidad
+        }
+
+        if prev_probabilidad is not None:
+            # Calcula la probabilidad entre el valor anterior y el valor actual
+            probabilidad_doble = probabilidad - prev_probabilidad
+            resultado["probabilidad_intervalo"] = probabilidad_doble
+        else:
+            resultado["probabilidad_intervalo"] = None
+
+        # Actualiza prev_probabilidad con la probabilidad actual
+        prev_probabilidad = probabilidad
+
+        resultados.append(resultado)
+
+    return resultados
 
 # Cálculos para probabilidades de la distribución binomial
 def calcular_probabilidades_binomial(n, p, k, tipo_calculo):
@@ -74,6 +142,7 @@ def calcular_probabilidades_hipergeometrica(M, k, n, N, tipo_calculo):
 
     return round(probabilidad, 4), round(probabilidad * 100, 2)
 
+# Dividir datos ingresados
 def convertir_datos(datos):
     datos_lista = datos.split(",")  # Divide la cadena en una lista donde cada elemento es se separa por una coma.
     datos_convertidos = []  # Definimos una lista vacía donde se van a guardar los datos.
@@ -84,6 +153,7 @@ def convertir_datos(datos):
             datos_convertidos.append(int(dato))  # Si no, convierte a entero y lo agrega a la lista.
     return datos_convertidos  # Retorna la lista de datos ya convertidos como una lista nueva.
 
+# Calculos de estadística descriptiva
 def calcular_estadisticas(datos):
     n = len(datos)  # Calcula cantidad de datos.
     media = round(sum(datos) / n, 4)  # Calcula la media con 4 decimales.
@@ -171,6 +241,7 @@ def calcular_frecuencias(datos):
     
     return frec_abs, frec_rel, frec_porcentual, frec_abs_acum, frec_rel_acum, frec_porcentual_acum  # Retorna todas las frecuencias calculadas.
 
+# Funciones para los menús
 def mostrar_menu_principal():
     print("\nMenú principal:")
     print("1. Estadística Descriptiva")
@@ -199,6 +270,7 @@ def mostrar_menu_probabilidad():
     print("1. Distribución Binomial")
     print("2. Distribución Poisson")
     print("3. Distribución Hipergeométrica")
+    print("4. Distribución Normal")
     print("0. Volver al menú principal")
 
 def mostrar_menu_probabilidad_especifica(tipo_distribucion):
@@ -225,44 +297,48 @@ def ejecutar_estadistica_descriptiva():
 
     while True:
         mostrar_menu_estadistica()
-        opcion = int(input("Seleccione una opción: "))
-        
-        if opcion == 1:
-            print(f"\nLa media es: {media}")
-        elif opcion == 2:
-            print(f"\nLa mediana es: {mediana}")
-        elif opcion == 3:
-            print(f"\nEl cuartil 1 es: {cuartil1}")
-        elif opcion == 4:
-            print(f"\nEl cuartil 3 es: {cuartil3}")
-        elif opcion == 5:
-            if isinstance(frecuencias_moda, dict):
-                if len(frecuencias_moda) > 1:
-                    modas = ', '.join(map(str, frecuencias_moda.keys()))
-                    frecuencia = list(frecuencias_moda.values())[0]
-                    print(f"\nLas modas son {modas}. Su frecuencia es {frecuencia}")
+        opciones = input("Seleccione una o más opciones separadas por comas (ej. 1,2,5): ").split(',')
+
+        for opcion_estadistica in opciones:
+            opcion_estadistica = opcion_estadistica.strip()
+            if opcion_estadistica == '1':
+                print(f"\nLa media es: {media}")
+            elif opcion_estadistica == '2':
+                print(f"\nLa mediana es: {mediana}")
+            elif opcion_estadistica == '3':
+                print(f"\nEl cuartil 1 es: {cuartil1}")
+            elif opcion_estadistica == '4':
+                print(f"\nEl cuartil 3 es: {cuartil3}")
+            elif opcion_estadistica == '5':
+                if isinstance(frecuencias_moda, dict):
+                    if len(frecuencias_moda) > 1:
+                        modas = ', '.join(map(str, frecuencias_moda.keys()))
+                        frecuencia = list(frecuencias_moda.values())[0]
+                        print(f"\nLas modas son {modas}. Su frecuencia es {frecuencia}")
+                    else:
+                        print(f"\nNo hay moda. La frecuencia de todos los valores es {list(frecuencias_moda.values())[0]}")
                 else:
-                    print(f"\nNo hay moda. La frecuencia de todos los valores es {list(frecuencias_moda.values())[0]}")
+                    print(frecuencias_moda)
+            elif opcion_estadistica == '6':
+                print(f"\nFrecuencia Absoluta: {frec_abs}")
+            elif opcion_estadistica == '7':
+                print(f"\nFrecuencia Absoluta Acumulada: {frec_abs_acum}")
+            elif opcion_estadistica == '8':
+                print(f"\nFrecuencia Relativa: {frec_rel}")
+            elif opcion_estadistica == '9':
+                print(f"\nFrecuencia Relativa Acumulada: {frec_rel_acum}")
+            elif opcion_estadistica == '10':
+                print(f"\nFrecuencia Porcentual: {frec_porcentual}")
+            elif opcion_estadistica == '11':
+                print(f"\nFrecuencia Porcentual Acumulada: {frec_porcentual_acum}")
+            elif opcion_estadistica == '12':
+                print(f"\nEl Desvío Estándar Muestral es: {desvio_muestral}")
+            elif opcion_estadistica == '13':
+                print(f"\nEl Desvío Estándar Poblacional es: {desvio_poblacional}")
+            elif opcion_estadistica == '0':
+                return  # Salir de la función y volver al menú principal
             else:
-                print(frecuencias_moda)
-        elif opcion == 6:
-            print(f"\nFrecuencia Absoluta: {frec_abs}")
-        elif opcion == 7:
-            print(f"\nFrecuencia Absoluta Acumulada: {frec_abs_acum}")
-        elif opcion == 8:
-            print(f"\nFrecuencia Relativa: {frec_rel}")
-        elif opcion == 9:
-            print(f"\nFrecuencia Relativa Acumulada: {frec_rel_acum}")
-        elif opcion == 10:
-            print(f"\nFrecuencia Porcentual: {frec_porcentual}")
-        elif opcion == 11:
-            print(f"\nFrecuencia Porcentual Acumulada: {frec_porcentual_acum}")
-        elif opcion == 12:
-            print(f"\nEl Desvío Estándar Muestral es: {desvio_muestral}")
-        elif opcion == 13:
-            print(f"\nEl Desvío Estándar Poblacional es: {desvio_poblacional}")
-        elif opcion == 0:
-            break
+                print(f"Opción {opcion_estadistica} no válida. Por favor, intente de nuevo.")  # Mensaje de error si la opción no es válida.
 
         continuar = input("\n¿Desea realizar otro cálculo de estadística descriptiva? (s/n): ").lower()
         if continuar != 's':
@@ -314,7 +390,7 @@ def ejecutar_probabilidad():
             N = int(input("\nIngrese el tamaño de la población (N): "))
             M = int(input("Ingrese cantidad de éxitos en la población (M): "))
             n = int(input("Ingrese el tamaño de la muestra (n): "))
-            k = int(input("Ingrese cantidad de éxitos buscados en la muestra (K): "))
+            k = int(input("Ingrese cantidad de éxitos buscados en la muestra (k): "))
 
             while True:
                 mostrar_menu_probabilidad_especifica('hipergeometrica')
@@ -330,9 +406,48 @@ def ejecutar_probabilidad():
                 if continuar != 's':
                     break
 
+        elif opcion_probabilidad == 4:
+            while True:
+                m = float(input("\nIngrese media: "))
+                s = float(input("Ingrese variación estándar (σ): "))
+                x = input("Ingrese variable a calcular (x) (Si es un intervalo use comas): ")
+                
+                datos_x = convertir_datos(x)
+                resultados = calcular_distribucion_normal(m, s, datos_x)
+
+                if len(datos_x) == 1:
+                    resultado = resultados[0]
+                    valor_z = resultado["z_value"]
+                    probabilidad_decimal = resultado["probabilidad"]
+                    probabilidad_porcentaje = probabilidad_decimal * 100
+                    print(f"La probabilidad para la variable {x} con Z = {valor_z:.4f} es {probabilidad_decimal:.4f} o {probabilidad_porcentaje:.2f}%")
+                else:
+                    primer_resultado = resultados[0]
+                    ultimo_resultado = resultados[-1]
+
+                    valor_z1 = primer_resultado["z_value"]
+                    valor_z2 = ultimo_resultado["z_value"]
+
+                    probabilidad1 = primer_resultado["probabilidad"]
+                    probabilidad2 = ultimo_resultado["probabilidad"]
+
+                    probabilidad_intervalo = probabilidad2 - probabilidad1
+                    probabilidad_porcentaje = probabilidad_intervalo * 100
+
+                    intervalo = f"{datos_x[0]} <= X <= {datos_x[1]}"
+                    print(f"La probabilidad para el intervalo {intervalo} con valores Z = [{valor_z1}, {valor_z2}] es {probabilidad_intervalo:.4f} o {probabilidad_porcentaje:.2f}%")       
+
+                continuar = input("\n¿Desea realizar otro cálculo con la distribución normal? (s/n): ").lower()
+                if continuar != 's':
+                    break
+
         elif opcion_probabilidad == 0:
             break
 
+        else:
+            print(f"Opción {opcion_probabilidad} no válida. Por favor, intente de nuevo.")  # Mensaje de error si la opción no es válida.
+
+# Ciclo principal del programa
 def main():
     while True:
         mostrar_menu_principal()
