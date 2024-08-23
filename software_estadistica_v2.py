@@ -48,56 +48,20 @@ def calcular_probabilidades_acumuladas(z):
     tabla_z = generar_tabla_z()
     probabilidad = 0
 
-    if -4 <= z <= 4:
-        if z in tabla_z:
-            probabilidad = tabla_z[z]
-            
-        else: # CAMBIAR, APROXIMAR CON EL DE ABAJO Y EL DE ARRIBA (en teoria esta)
-            # Encontrar los dos z más cercanos para aproximar
-            lower_z = max(key for key in tabla_z if key < z)
-            upper_z = min(key for key in tabla_z if key > z)
-
-            # Valores correspondientes de probabilidad
-            lower_p = tabla_z[lower_z]
-            upper_p = tabla_z[upper_z]
-
-            # Promediación lineal
-            p_promediado = (lower_p + upper_p) / 2
-            probabilidad = p_promediado
-
-    elif z < -4:
+    if z < -4:
         probabilidad = 0
     elif z > 4:
         probabilidad = 1
+    elif z in tabla_z:
+        probabilidad = tabla_z[z]
+    else:
+        lower_z = max(key for key in tabla_z if key < z)
+        upper_z = min(key for key in tabla_z if key > z)
+        lower_p = tabla_z[lower_z]
+        upper_p = tabla_z[upper_z]
+        probabilidad = (lower_p + upper_p) / 2
 
     return probabilidad
-
-def calcular_distribucion_normal(m, s, datos_x):
-    prev_probabilidad = None
-    resultados = []
-
-    for x in datos_x:
-        z_value = estandarizar(m, s, x)
-        probabilidad = calcular_probabilidades_acumuladas(z_value)
-
-        resultado = {
-            "z_value": z_value,
-            "probabilidad": probabilidad
-        }
-
-        if prev_probabilidad is not None:
-            # Calcula la probabilidad entre el valor anterior y el valor actual
-            probabilidad_doble = probabilidad - prev_probabilidad
-            resultado["probabilidad_intervalo"] = probabilidad_doble
-        else:
-            resultado["probabilidad_intervalo"] = None
-
-        # Actualiza prev_probabilidad con la probabilidad actual
-        prev_probabilidad = probabilidad
-
-        resultados.append(resultado)
-
-    return resultados
 
 # Cálculos para probabilidades de la distribución binomial
 def calcular_probabilidades_binomial(n, p, k, tipo_calculo):
@@ -141,6 +105,21 @@ def calcular_probabilidades_hipergeometrica(M, k, n, N, tipo_calculo):
         probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k + 1, min(n, M))) # Se calcula el mínimo entre el tamaño de la muestra y el número de éxitos en la población
     elif tipo_calculo == 5: # P(X ≥ k)
         probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k, min(n, M)))
+
+    return round(probabilidad, 4), round(probabilidad * 100, 2)
+
+# Cálculos de las probabilidades para la distribución normal
+def calcular_distribucion_normal(m, s, datos_x, tipo_probabilidad):
+    resultados = [calcular_probabilidades_acumuladas(estandarizar(m, s, x)) for x in datos_x]
+
+    if tipo_probabilidad == 1:  # P(x > a)
+        probabilidad = 1 - resultados[0]
+    elif tipo_probabilidad == 2:  # P(x < a)
+        probabilidad = resultados[0]
+    elif tipo_probabilidad == 3:  # P(a < x < b)
+        probabilidad = resultados[1] - resultados[0]
+    elif tipo_probabilidad == 4:  # P(x < a or x > b)
+        probabilidad = resultados[0] + (1 - resultados[1])
 
     return round(probabilidad, 4), round(probabilidad * 100, 2)
 
@@ -279,18 +258,27 @@ def mostrar_menu_probabilidad():
     print("0. Volver al menú principal")
 
 def mostrar_menu_probabilidad_especifica(tipo_distribucion):
-    if tipo_distribucion == 'binomial':
-        print("\nCálculo de Distribución Binomial:")
-    elif tipo_distribucion == 'poisson':
-        print("\nCálculo de Distribución Poisson:")
-    elif tipo_distribucion == 'hipergeometrica':
-        print("\nCálculo de Distribución Hipergeométrica:")
+    if tipo_distribucion in ['binomial', 'poisson', 'hipergeometrica']: 
+        if tipo_distribucion == 'binomial':
+            print("\nCálculo de Distribución Binomial:")
+        elif tipo_distribucion == 'poisson':
+            print("\nCálculo de Distribución Poisson:")
+        elif tipo_distribucion == 'hipergeometrica':
+            print("\nCálculo de Distribución Hipergeométrica:")
 
-    print("1. P(X = k)")
-    print("2. P(X < k)")
-    print("3. P(X ≤ k)")
-    print("4. P(X > k)")
-    print("5. P(X ≥ k)")
+        print("1. P(X = k)")
+        print("2. P(X < k)")
+        print("3. P(X ≤ k)")
+        print("4. P(X > k)")
+        print("5. P(X ≥ k)")
+    
+    elif tipo_distribucion == 'normal':
+        print("\nCálculo de Distribución Normal:")
+        print("1. P(X > a)")
+        print("2. P(X < a)")
+        print("3. P(a < X < b)")
+        print("4. P(X < a o X > b)")
+
     print("0. Volver al menú de probabilidad")
 
 def ejecutar_estadistica_descriptiva():
@@ -387,7 +375,7 @@ def ejecutar_probabilidad():
                 u = float(input("\nIngrese el número promedio de ocurrencias o esperanza (λ): "))
 
                 mostrar_menu_probabilidad_especifica('poisson')
-                opcion_poisson = int(input("Seleccione una opción: "))
+                opcion_poisson = int(input("Seleccione el tipo de probabilidad que desea calcular: "))
                 if opcion_poisson == 0:
                     break
 
@@ -407,7 +395,7 @@ def ejecutar_probabilidad():
                 n = int(input("Ingrese el tamaño de la muestra (n): "))
 
                 mostrar_menu_probabilidad_especifica('hipergeometrica')
-                opcion_hipergeometrica = int(input("Seleccione una opción: "))
+                opcion_hipergeometrica = int(input("Seleccione el tipo de probabilidad que desea calcular: "))
                 if opcion_hipergeometrica == 0:
                     break
 
@@ -424,33 +412,23 @@ def ejecutar_probabilidad():
             while True:
                 m = float(input("\nIngrese media: "))
                 s = float(input("Ingrese desviación estándar (σ): "))
-                x = input("Ingrese variable a calcular (x) (Si es un intervalo use comas): ")
+
+                mostrar_menu_probabilidad_especifica('normal')
+                opcion_normal = int(input("Seleccione el tipo de probabilidad que desea calcular: "))
+                if opcion_normal == 0:
+                    break
                 
-                datos_x = convertir_datos(x)
-                resultados = calcular_distribucion_normal(m, s, datos_x)
-
-                if len(datos_x) == 1:
-                    resultado = resultados[0]
-                    valor_z = resultado["z_value"]
-                    probabilidad_decimal = resultado["probabilidad"]
-                    probabilidad_porcentaje = probabilidad_decimal * 100
-                    print(f"La probabilidad para la variable {x} con Z = {valor_z:.4f} es {probabilidad_decimal:.4f} o {probabilidad_porcentaje:.2f}%")
-                else:
-                    primer_resultado = resultados[0]
-                    ultimo_resultado = resultados[-1]
-
-                    valor_z1 = primer_resultado["z_value"]
-                    valor_z2 = ultimo_resultado["z_value"]
-
-                    probabilidad1 = primer_resultado["probabilidad"]
-                    probabilidad2 = ultimo_resultado["probabilidad"]
-
-                    probabilidad_intervalo = probabilidad2 - probabilidad1
-                    probabilidad_porcentaje = probabilidad_intervalo * 100
-
-                    intervalo = f"{datos_x[0]} <= X <= {datos_x[1]}"
-                    print(f"La probabilidad para el intervalo {intervalo} con valores Z = [{valor_z1}, {valor_z2}] es {probabilidad_intervalo:.4f} o {probabilidad_porcentaje:.2f}%")       
-
+                if opcion_normal in [1, 2]: # Un valor
+                    a = float(input("Ingrese el valor de a: "))
+                    datos_x = [a]
+                elif opcion_normal in [3, 4]:  # Dos valores
+                    a = float(input("Ingrese el valor de a: "))
+                    b = float(input("Ingrese el valor de b: "))
+                    datos_x = [a, b]
+            
+                probabilidad_decimal, probabilidad_porcentaje = calcular_distribucion_normal(m, s, datos_x, opcion_normal)
+                print(f"\nProbabilidad: {probabilidad_decimal} ({probabilidad_porcentaje}%)")
+                
                 continuar = input("\n¿Desea realizar otro cálculo con la distribución normal? (s/n): ").lower()
                 if continuar != 's':
                     break
