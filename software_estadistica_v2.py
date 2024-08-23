@@ -67,61 +67,81 @@ def calcular_probabilidades_acumuladas(z):
 def calcular_probabilidades_binomial(n, p, k, tipo_calculo):
     if tipo_calculo == 1:  # P(X = k)
         probabilidad = formula_binomial(n, p, k)
+        prob_string = f"P(X = {k})"
     elif tipo_calculo == 2:  # P(X < k)
         probabilidad = sum(formula_binomial(n, p, i) for i in range(k))
+        prob_string = f"P(X < {k})"
     elif tipo_calculo == 3:  # P(X ≤ k)
         probabilidad = sum(formula_binomial(n, p, i) for i in range(k + 1))
+        prob_string = f"P(X ≤ {k})"
     elif tipo_calculo == 4:  # P(X > k)
         probabilidad = sum(formula_binomial(n, p, i) for i in range(k + 1, n + 1))
+        prob_string = f"P(X > {k})"
     elif tipo_calculo == 5:  # P(X ≥ k)
         probabilidad = sum(formula_binomial(n, p, i) for i in range(k, n + 1))
+        prob_string = f"P(X ≥ {k})"
 
-    return round(probabilidad, 4), round(probabilidad * 100, 2)  # Retorna en decimal y porcentaje.
+    return round(probabilidad, 4), round(probabilidad * 100, 2), prob_string  # Retorna en decimal y porcentaje.
 
 # Cálculos para probabilidades de la distribución Poisson
 def calcular_probabilidades_poisson(u, k, tipo_calculo):
     if tipo_calculo == 1:  # P(X = k)
         probabilidad = formula_poisson(u, k)
+        prob_string = f"P(X = {k})"
     elif tipo_calculo == 2:  # P(X < k)
         probabilidad = sum(formula_poisson(u, i) for i in range(k))
+        prob_string = f"P(X < {k})"
     elif tipo_calculo == 3:  # P(X ≤ k)
         probabilidad = sum(formula_poisson(u, i) for i in range(k + 1))
+        prob_string = f"P(X ≤ {k})"
     elif tipo_calculo == 4:  # P(X > k)
         probabilidad = sum(formula_poisson(u, i) for i in range(k + 1, int(u * 10)))  # Rango ampliado
+        prob_string = f"P(X > {k})"
     elif tipo_calculo == 5:  # P(X ≥ k)
         probabilidad = sum(formula_poisson(u, i) for i in range(k, int(u * 10)))  # Rango ampliado
+        prob_string = f"P(X ≥ {k})"
 
-    return round(probabilidad, 4), round(probabilidad * 100, 2)  # Retorna en decimal y porcentaje.
+    return round(probabilidad, 4), round(probabilidad * 100, 2), prob_string  # Retorna en decimal y porcentaje.
 
 # Cálculos para probabilidades de la distribución hipergeométrica
 def calcular_probabilidades_hipergeometrica(M, k, n, N, tipo_calculo):
     if tipo_calculo == 1: # P(X = k)
         probabilidad = formula_hipergeometrica(M, k, n, N)
+        prob_string = f"P(X = {k})"
     elif tipo_calculo == 2: # P(X < k)
         probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k))
+        prob_string = f"P(X < {k})"
     elif tipo_calculo == 3: # P(X ≤ k)
         probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k + 1))
+        prob_string = f"P(X ≤ {k})"
     elif tipo_calculo == 4: # P(X > k)
         probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k + 1, min(n, M))) # Se calcula el mínimo entre el tamaño de la muestra y el número de éxitos en la población
+        prob_string = f"P(X > {k})"
     elif tipo_calculo == 5: # P(X ≥ k)
         probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k, min(n, M)))
+        prob_string = f"P(X ≥ {k})"
 
-    return round(probabilidad, 4), round(probabilidad * 100, 2)
+    return round(probabilidad, 4), round(probabilidad * 100, 2), prob_string
 
 # Cálculos de las probabilidades para la distribución normal
 def calcular_distribucion_normal(m, s, datos_x, tipo_probabilidad):
-    resultados = [calcular_probabilidades_acumuladas(estandarizar(m, s, x)) for x in datos_x]
+    z_values = [estandarizar(m, s, x) for x in datos_x]
+    resultados = [calcular_probabilidades_acumuladas(z) for z in z_values]
 
     if tipo_probabilidad == 1:  # P(x > a)
         probabilidad = 1 - resultados[0]
+        prob_string = f"P(X > {datos_x[0]})"
     elif tipo_probabilidad == 2:  # P(x < a)
         probabilidad = resultados[0]
+        prob_string = f"P(X < {datos_x[0]})"
     elif tipo_probabilidad == 3:  # P(a < x < b)
         probabilidad = resultados[1] - resultados[0]
+        prob_string = f"P({datos_x[0]} < X < {datos_x[1]})"
     elif tipo_probabilidad == 4:  # P(x < a or x > b)
         probabilidad = resultados[0] + (1 - resultados[1])
+        prob_string = f"P(X < {datos_x[0]} o X > {datos_x[1]})"
 
-    return round(probabilidad, 4), round(probabilidad * 100, 2)
+    return round(probabilidad, 4), round(probabilidad * 100, 2), prob_string, z_values
 
 # Dividir datos ingresados
 def convertir_datos(datos):
@@ -174,10 +194,10 @@ def calcular_estadisticas(datos):
 
 def calcular_frecuencias(datos):
     n = len(datos) 
-    datos.sort()  #Ordena los datos.
+    datos.sort()  # Ordena los datos.
 
-    #Frecuencia Absoluta:
-    #Número de veces en que aparece repetido un mismo valor de la variable
+    # Frecuencia Absoluta:
+    # Número de veces en que aparece repetido un mismo valor de la variable
     frec_abs = {}  #Definimos un diccionario vacio para la frecuencia absoluta.
     for dato in datos:
         if dato in frec_abs:
@@ -185,38 +205,38 @@ def calcular_frecuencias(datos):
         else:
             frec_abs[dato] = 1  # Inicializa el contador si el dato no está en el diccionario.
 
-    #Frecuencia Relativa:
-    #Es el cociente entre su frecuencia absoluta y la suma de todas las frecuencias absolutas.
+    # Frecuencia Relativa:
+    # Es el cociente entre su frecuencia absoluta y la suma de todas las frecuencias absolutas.
     frec_rel = {}
     for k, v in frec_abs.items():
         frec_rel[k] = round(v / n, 4)  # Calcula la frecuencia relativa.
 
-    #Frecuencia porcentual
-    #Es igual a la frecuencia relativa multiplicada por 100. 
-    #Expresa el porcentaje que el valor de una variable tiene en el total de observaciones.
+    # Frecuencia porcentual
+    # Es igual a la frecuencia relativa multiplicada por 100. 
+    # Expresa el porcentaje que el valor de una variable tiene en el total de observaciones.
     frec_porcentual = {}
     for k, v in frec_rel.items():
         frec_porcentual[k] = round(v * 100, 2) # Calcula la frecuencia porcentual.
 
-    #Frecuencia absoluta acumulada
-    #Se obtiene sumando todas las frecuencias absolutas de las variables que le anteceden más la frecuencia absoluta de dicha variable.
+    # Frecuencia absoluta acumulada
+    # Se obtiene sumando todas las frecuencias absolutas de las variables que le anteceden más la frecuencia absoluta de dicha variable.
     frec_abs_acum = {}  #Definimos un diccionario vacio para la frecuencia absoluta acumulada.
     contador = 0
     for k in frec_abs:
         contador += frec_abs[k]  # Acumula las frecuencias absolutas.
         frec_abs_acum[k] = contador  # Asigna la frecuencia acumulada al dato.
 
-    #Frecuencia relativa acumulada
-    #Se obtiene sumando todas las frecuencias relativas que la anteceden más la frecuencia relativa de dicha variable.
+    # Frecuencia relativa acumulada
+    # Se obtiene sumando todas las frecuencias relativas que la anteceden más la frecuencia relativa de dicha variable.
     frec_rel_acum = {}  #Definimos un diccionario vacio para la frecuencia relativa acumulada.
     contador = 0
     for k in frec_rel:
         contador += frec_rel[k]  # Acumula las frecuencias relativas.
         frec_rel_acum[k] = round(contador, 4)  # Asigna la frecuencia relativa acumulada al dato.
 
-    #Frecuencia porcentual acumulada
-    #Se obtiene sumando todas las frecuencias porcentuales de las variables que la anteceden
-    #más la frecuencia porcentual de dicha variable.
+    # Frecuencia porcentual acumulada
+    # Se obtiene sumando todas las frecuencias porcentuales de las variables que la anteceden
+    # más la frecuencia porcentual de dicha variable.
 
     frec_porcentual_acum = {}
     for k, v in frec_rel_acum.items():
@@ -363,8 +383,8 @@ def ejecutar_probabilidad():
 
                 k = int(input("Ingrese el número de éxitos deseados (k): "))
 
-                probabilidad_decimal, probabilidad_porcentaje = calcular_probabilidades_binomial(n, p, k, opcion_binomial)
-                print(f"\nProbabilidad: {probabilidad_decimal} ({probabilidad_porcentaje}%)")
+                probabilidad_decimal, probabilidad_porcentaje, prob_string = calcular_probabilidades_binomial(n, p, k, opcion_binomial)
+                print(f"\n{prob_string} = {probabilidad_decimal} ({probabilidad_porcentaje}%)")
 
                 continuar = input("\n¿Desea realizar otro cálculo con la distribución binomial? (s/n): ").lower()
                 if continuar != 's':
@@ -381,8 +401,8 @@ def ejecutar_probabilidad():
 
                 k = int(input("Ingrese el número de éxitos deseados (k): "))
 
-                probabilidad_decimal, probabilidad_porcentaje = calcular_probabilidades_poisson(u, k, opcion_poisson)
-                print(f"\nProbabilidad: {probabilidad_decimal} ({probabilidad_porcentaje}%)")
+                probabilidad_decimal, probabilidad_porcentaje, prob_string = calcular_probabilidades_poisson(u, k, opcion_poisson)
+                print(f"\n{prob_string} = {probabilidad_decimal} ({probabilidad_porcentaje}%)")
 
                 continuar = input("\n¿Desea realizar otro cálculo con la distribución Poisson? (s/n): ").lower()
                 if continuar != 's':
@@ -401,8 +421,8 @@ def ejecutar_probabilidad():
 
                 k = int(input("Ingrese cantidad de éxitos buscados en la muestra (k): "))
                     
-                probabilidad_decimal, probabilidad_porcentaje = calcular_probabilidades_hipergeometrica(M, k, n, N, opcion_hipergeometrica)
-                print(f"\nProbabilidad: {probabilidad_decimal} ({probabilidad_porcentaje}%)")
+                probabilidad_decimal, probabilidad_porcentaje, prob_string = calcular_probabilidades_hipergeometrica(M, k, n, N, opcion_hipergeometrica)
+                print(f"\n{prob_string} = {probabilidad_decimal} ({probabilidad_porcentaje}%)")
 
                 continuar = input("\n¿Desea realizar otro cálculo con la distribución hipergeométrica? (s/n): ").lower()
                 if continuar != 's':
@@ -426,8 +446,11 @@ def ejecutar_probabilidad():
                     b = float(input("Ingrese el valor de b: "))
                     datos_x = [a, b]
             
-                probabilidad_decimal, probabilidad_porcentaje = calcular_distribucion_normal(m, s, datos_x, opcion_normal)
-                print(f"\nProbabilidad: {probabilidad_decimal} ({probabilidad_porcentaje}%)")
+                probabilidad_decimal, probabilidad_porcentaje, prob_string, z_values = calcular_distribucion_normal(m, s, datos_x, opcion_normal)
+                z_values_string = ", ".join([f"Z = {z:.4f}" for z in z_values])
+
+
+                print(f"\nUsando los valores {z_values_string}, {prob_string} = {probabilidad_decimal} ({probabilidad_porcentaje}%)")
                 
                 continuar = input("\n¿Desea realizar otro cálculo con la distribución normal? (s/n): ").lower()
                 if continuar != 's':
