@@ -6,6 +6,8 @@ EULER = 2.71828182845904523536
 
 # Funciones auxiliares para probabilidades
 def factorial(x):
+    if x == 0:
+        return 1
     resultado = 1
     for i in range(2, x + 1):
         resultado = resultado * i
@@ -19,8 +21,8 @@ def formula_binomial(n, p, k):
     distribucion_binomial = coeficiente * (p ** k) * ((1 - p) ** (n - k))
     return round(distribucion_binomial, 4)
 
-def formula_poisson(x, u):
-    distribucion_poisson = ((EULER ** -u) * (u**x)) / factorial(x)
+def formula_poisson(u, k):
+    distribucion_poisson = ((EULER ** -u) * (u**k)) / factorial(k)
     return round(distribucion_poisson, 4)
 
 def formula_hipergeometrica(M, k, n, N):
@@ -38,35 +40,35 @@ def generar_tabla_z(incremento=0.01):
         z += incremento
     return tabla_z
 
-def calcular_valor_z(m, s, x):
+def estandarizar(m, s, x):
     valor_z = (x - m) / s
     return valor_z
 
 def calcular_probabilidades_acumuladas(z):
     tabla_z = generar_tabla_z()
+    probabilidad = 0
 
-    if z in tabla_z:
-        probabilidad = tabla_z[z]
- 
+    if -4 <= z <= 4:
+        if z in tabla_z:
+            probabilidad = tabla_z[z]
+            
+        else: # CAMBIAR, APROXIMAR CON EL DE ABAJO Y EL DE ARRIBA (en teoria esta)
+            # Encontrar los dos z más cercanos para aproximar
+            lower_z = max(key for key in tabla_z if key < z)
+            upper_z = min(key for key in tabla_z if key > z)
+
+            # Valores correspondientes de probabilidad
+            lower_p = tabla_z[lower_z]
+            upper_p = tabla_z[upper_z]
+
+            # Promediación lineal
+            p_promediado = (lower_p + upper_p) / 2
+            probabilidad = p_promediado
+
     elif z < -4:
         probabilidad = 0
     elif z > 4:
         probabilidad = 1
-    
-    elif z in range(-4,5):
-        # Encontrar los dos z más cercanos para interpolación
-        lower_z = max(key for key in tabla_z if key < z)
-        upper_z = min(key for key in tabla_z if key > z)
-
-        # Valores correspondientes de probabilidad
-        lower_p = tabla_z[lower_z]
-        upper_p = tabla_z[upper_z]
-
-        # Interpolación lineal
-        slope = (upper_p - lower_p) / (upper_z - lower_z)
-        interpolated_p = lower_p + slope * (z - lower_z)    
-
-        probabilidad = interpolated_p
 
     return probabilidad
 
@@ -75,7 +77,7 @@ def calcular_distribucion_normal(m, s, datos_x):
     resultados = []
 
     for x in datos_x:
-        z_value = calcular_valor_z(m, s, x)
+        z_value = estandarizar(m, s, x)
         probabilidad = calcular_probabilidades_acumuladas(z_value)
 
         resultado = {
@@ -113,17 +115,17 @@ def calcular_probabilidades_binomial(n, p, k, tipo_calculo):
     return round(probabilidad, 4), round(probabilidad * 100, 2)  # Retorna en decimal y porcentaje.
 
 # Cálculos para probabilidades de la distribución Poisson
-def calcular_probabilidades_poisson(x, u, tipo_calculo):
+def calcular_probabilidades_poisson(u, k, tipo_calculo):
     if tipo_calculo == 1:  # P(X = k)
-        probabilidad = formula_poisson(x, u)
+        probabilidad = formula_poisson(u, k)
     elif tipo_calculo == 2:  # P(X < k)
-        probabilidad = sum(formula_poisson(i, u) for i in range(x))
+        probabilidad = sum(formula_poisson(u, i) for i in range(k))
     elif tipo_calculo == 3:  # P(X ≤ k)
-        probabilidad = sum(formula_poisson(i, u) for i in range(x + 1))
+        probabilidad = sum(formula_poisson(u, i) for i in range(k + 1))
     elif tipo_calculo == 4:  # P(X > k)
-        probabilidad = sum(formula_poisson(i, u) for i in range(x + 1, int(u * 10)))  # Rango ampliado
+        probabilidad = sum(formula_poisson(u, i) for i in range(k + 1, int(u * 10)))  # Rango ampliado
     elif tipo_calculo == 5:  # P(X ≥ k)
-        probabilidad = sum(formula_poisson(i, u) for i in range(x, int(u * 10)))  # Rango ampliado
+        probabilidad = sum(formula_poisson(u, i) for i in range(k, int(u * 10)))  # Rango ampliado
 
     return round(probabilidad, 4), round(probabilidad * 100, 2)  # Retorna en decimal y porcentaje.
 
@@ -362,16 +364,16 @@ def ejecutar_probabilidad():
         opcion_probabilidad = int(input("Seleccione una opción: "))
 
         if opcion_probabilidad == 1:
-            n = int(input("\nIngrese el número de ensayos (n): "))
-            p = float(input("Ingrese la probabilidad de éxito en cada ensayo (p): "))
-            k = int(input("Ingrese el número de éxitos deseados (k): "))
-
             while True:
+                n = int(input("\nIngrese el número de ensayos (n): "))
+                p = float(input("Ingrese la probabilidad de éxito en cada ensayo (p): "))
+                
                 mostrar_menu_probabilidad_especifica('binomial')
-                opcion_binomial = int(input("Seleccione una opción: "))
-
+                opcion_binomial = int(input("Seleccione el tipo de probabilidad que desea calcular: "))
                 if opcion_binomial == 0:
                     break
+
+                k = int(input("Ingrese el número de éxitos deseados (k): "))
 
                 probabilidad_decimal, probabilidad_porcentaje = calcular_probabilidades_binomial(n, p, k, opcion_binomial)
                 print(f"\nProbabilidad: {probabilidad_decimal} ({probabilidad_porcentaje}%)")
@@ -381,17 +383,17 @@ def ejecutar_probabilidad():
                     break
 
         elif opcion_probabilidad == 2:
-            x = int(input("\nIngrese el número de ocurrencias (x): "))
-            u = float(input("Ingrese el número promedio de ocurrencias o esperanza (λ): "))
-
             while True:
+                u = float(input("\nIngrese el número promedio de ocurrencias o esperanza (λ): "))
+
                 mostrar_menu_probabilidad_especifica('poisson')
                 opcion_poisson = int(input("Seleccione una opción: "))
-
                 if opcion_poisson == 0:
                     break
 
-                probabilidad_decimal, probabilidad_porcentaje = calcular_probabilidades_poisson(x, u, opcion_poisson)
+                k = int(input("Ingrese el número de éxitos deseados (k): "))
+
+                probabilidad_decimal, probabilidad_porcentaje = calcular_probabilidades_poisson(u, k, opcion_poisson)
                 print(f"\nProbabilidad: {probabilidad_decimal} ({probabilidad_porcentaje}%)")
 
                 continuar = input("\n¿Desea realizar otro cálculo con la distribución Poisson? (s/n): ").lower()
@@ -399,17 +401,17 @@ def ejecutar_probabilidad():
                     break
 
         elif opcion_probabilidad == 3:
-            N = int(input("\nIngrese el tamaño de la población (N): "))
-            M = int(input("Ingrese cantidad de éxitos en la población (M): "))
-            n = int(input("Ingrese el tamaño de la muestra (n): "))
-            k = int(input("Ingrese cantidad de éxitos buscados en la muestra (k): "))
+            while True:    
+                N = int(input("\nIngrese el tamaño de la población (N): "))
+                M = int(input("Ingrese cantidad de éxitos en la población (M): "))
+                n = int(input("Ingrese el tamaño de la muestra (n): "))
 
-            while True:
                 mostrar_menu_probabilidad_especifica('hipergeometrica')
                 opcion_hipergeometrica = int(input("Seleccione una opción: "))
-
                 if opcion_hipergeometrica == 0:
                     break
+
+                k = int(input("Ingrese cantidad de éxitos buscados en la muestra (k): "))
                     
                 probabilidad_decimal, probabilidad_porcentaje = calcular_probabilidades_hipergeometrica(M, k, n, N, opcion_hipergeometrica)
                 print(f"\nProbabilidad: {probabilidad_decimal} ({probabilidad_porcentaje}%)")
@@ -421,7 +423,7 @@ def ejecutar_probabilidad():
         elif opcion_probabilidad == 4:
             while True:
                 m = float(input("\nIngrese media: "))
-                s = float(input("Ingrese variación estándar (σ): "))
+                s = float(input("Ingrese desviación estándar (σ): "))
                 x = input("Ingrese variable a calcular (x) (Si es un intervalo use comas): ")
                 
                 datos_x = convertir_datos(x)
