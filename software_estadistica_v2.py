@@ -1,5 +1,6 @@
 import statistics  # Importa el módulo statistics para realizar cálculos estadísticos.
 import math
+from tabla_z import tabla_z
 
 # Constante de Euler con 20 decimales
 EULER = 2.71828182845904523536
@@ -32,20 +33,11 @@ def formula_hipergeometrica(M, k, n, N):
     distribucion_hipergeometrico = (coeficiente1 * coeficiente2) / coeficiente3
     return round(distribucion_hipergeometrico, 4)
 
-def generar_tabla_z(incremento=0.01):
-    tabla_z = {}
-    z = -4
-    while z <= 4:
-        tabla_z[round(z, 2)] = round(0.5 * (1 + math.erf(z / math.sqrt(2))), 6)
-        z += incremento
-    return tabla_z
-
 def estandarizar(m, s, x):
     valor_z = (x - m) / s
     return valor_z
 
-def calcular_probabilidades_acumuladas(z):
-    tabla_z = generar_tabla_z()
+def buscar_probabilidad_z(z):
     probabilidad = 0
 
     if z < -4:
@@ -124,9 +116,9 @@ def calcular_probabilidades_hipergeometrica(M, k, n, N, tipo_calculo):
     return round(probabilidad, 4), round(probabilidad * 100, 2), prob_string
 
 # Cálculos de las probabilidades para la distribución normal
-def calcular_distribucion_normal(m, s, datos_x, tipo_probabilidad):
+def calcular_probabilidad_distribucion_normal(m, s, datos_x, tipo_probabilidad):
     z_values = [estandarizar(m, s, x) for x in datos_x]
-    resultados = [calcular_probabilidades_acumuladas(z) for z in z_values]
+    resultados = [buscar_probabilidad_z(z) for z in z_values]
 
     if tipo_probabilidad == 1:  # P(x > a)
         probabilidad = 1 - resultados[0]
@@ -301,6 +293,60 @@ def mostrar_menu_probabilidad_especifica(tipo_distribucion):
 
     print("0. Volver al menú de probabilidad")
 
+# Validaciones para los inputs
+
+def obtener_opcion_principal():
+    while True:
+        try:
+            opcion_principal = int(input("Seleccione una opción: "))
+            if opcion_principal in [0, 1, 2]:
+                return opcion_principal
+            else:
+                print("Por favor, seleccione una opción válida (0, 1 o 2).")
+        except ValueError:
+            print("Entrada no válida. Por favor, ingrese un número.")
+
+def obtener_opciones_estadistica():
+    while True:
+        opciones = input("Seleccione una o más opciones separadas por comas (ej. 1,2,5): ").split(',')
+        opciones_validas = True
+        opciones_limpias = []
+        
+        for opcion in opciones:
+            opcion = opcion.strip()
+            if opcion.isdigit() and 0 <= int(opcion) <= 14:
+                opciones_limpias.append(opcion)
+            else:
+                print(f"Opción '{opcion}' no válida. Intente de nuevo.")
+                opciones_validas = False
+        
+        if opciones_validas:
+            return opciones_limpias
+        
+def obtener_opcion_probabilidad():
+    while True:
+        try:
+            opcion_probabilidad = int(input("Seleccione una opción: "))
+            if opcion_probabilidad in [0, 1, 2, 3, 4]:
+                return opcion_probabilidad
+            else:
+                print("Por favor, seleccione una opción válida (0, 1, 2, 3 o 4).")
+        except ValueError:
+            print("Entrada no válida. Por favor, ingrese un número.")
+
+def obtener_opcion_tipo_probabilidad():
+    while True:
+        try:
+            opcion_tipo_probabilidad = int(input("Seleccione una opción: "))
+            if opcion_tipo_probabilidad in [0, 1, 2, 3, 4, 5]:
+                return opcion_tipo_probabilidad
+            else:
+                print("Por favor, seleccione una opción válida (0, 1, 2, 3, 4 o 5).")
+        except ValueError:
+            print("Entrada no válida. Por favor, ingrese un número.")                        
+
+# Ejecución de menús
+
 def ejecutar_estadistica_descriptiva():
     datos = input("Ingrese los datos separados por comas (ej. 1,2,3,4): ")
     datos_convertidos = convertir_datos(datos)
@@ -310,7 +356,7 @@ def ejecutar_estadistica_descriptiva():
 
     while True:
         mostrar_menu_estadistica()
-        opciones = input("Seleccione una o más opciones separadas por comas (ej. 1,2,5): ").split(',')
+        opciones = obtener_opciones_estadistica()
 
         for opcion_estadistica in opciones:
             opcion_estadistica = opcion_estadistica.strip()
@@ -369,19 +415,47 @@ def ejecutar_estadistica_descriptiva():
 def ejecutar_probabilidad():
     while True:
         mostrar_menu_probabilidad()
-        opcion_probabilidad = int(input("Seleccione una opción: "))
+        opcion_probabilidad = obtener_opcion_probabilidad()
 
         if opcion_probabilidad == 1:
             while True:
-                n = int(input("\nIngrese el número de ensayos (n): "))
-                p = float(input("Ingrese la probabilidad de éxito en cada ensayo (p): "))
+                # Validación para el número de ensayos (n)
+                while True:
+                    try:
+                        n = int(input("\nIngrese el número de ensayos (n): "))
+                        if n < 1:
+                            print("El número de ensayos (n) debe ser al menos 1.")
+                        else:
+                            break
+                    except ValueError:
+                        print("Entrada no válida. Ingrese un número entero para n.")
+
+                # Validación para la probabilidad de éxito (p)
+                while True:
+                    try:
+                        p = float(input("Ingrese la probabilidad de éxito en cada ensayo (p): "))
+                        if p < 0 or p > 1:
+                            print("La probabilidad (p) debe estar entre 0 y 1.")
+                        else:
+                            break
+                    except ValueError:
+                        print("Entrada no válida. Ingrese un número decimal para p.")
                 
                 mostrar_menu_probabilidad_especifica('binomial')
-                opcion_binomial = int(input("Seleccione el tipo de probabilidad que desea calcular: "))
+                opcion_binomial = obtener_opcion_tipo_probabilidad()
                 if opcion_binomial == 0:
                     break
 
-                k = int(input("Ingrese el número de éxitos deseados (k): "))
+                # Validación para el número de éxitos deseados (k)
+                while True:
+                    try:
+                        k = int(input("Ingrese el número de éxitos deseados (k): "))
+                        if k < 1 or k > n:
+                            print(f"El número de éxitos (k) debe estar entre 1 y {n}.")
+                        else:
+                            break
+                    except ValueError:
+                        print("Entrada no válida. Ingrese un número entero para k.")
 
                 probabilidad_decimal, probabilidad_porcentaje, prob_string = calcular_probabilidades_binomial(n, p, k, opcion_binomial)
                 print(f"\n{prob_string} = {probabilidad_decimal} ({probabilidad_porcentaje}%)")
@@ -392,14 +466,32 @@ def ejecutar_probabilidad():
 
         elif opcion_probabilidad == 2:
             while True:
-                u = float(input("\nIngrese el número promedio de ocurrencias o esperanza (λ): "))
+                # Validación para el número promedio de ocurrencias (λ)
+                while True:
+                    try:
+                        u = float(input("\nIngrese el número promedio de ocurrencias o esperanza (λ): "))
+                        if u <= 0:
+                            print("El número promedio de ocurrencias (λ) debe ser mayor que 0.")
+                        else:
+                            break
+                    except ValueError:
+                        print("Entrada no válida. Ingrese un número decimal positivo para λ.")
 
                 mostrar_menu_probabilidad_especifica('poisson')
-                opcion_poisson = int(input("Seleccione el tipo de probabilidad que desea calcular: "))
+                opcion_poisson = obtener_opcion_tipo_probabilidad()
                 if opcion_poisson == 0:
                     break
 
-                k = int(input("Ingrese el número de éxitos deseados (k): "))
+                # Validación para el número de éxitos deseados (k)
+                while True:
+                    try:
+                        k = int(input("Ingrese el número de éxitos deseados (k): "))
+                        if k < 0:
+                            print("El número de éxitos deseados (k) debe ser al menos 0.")
+                        else:
+                            break
+                    except ValueError:
+                        print("Entrada no válida. Ingrese un número entero para k.")
 
                 probabilidad_decimal, probabilidad_porcentaje, prob_string = calcular_probabilidades_poisson(u, k, opcion_poisson)
                 print(f"\n{prob_string} = {probabilidad_decimal} ({probabilidad_porcentaje}%)")
@@ -410,17 +502,53 @@ def ejecutar_probabilidad():
 
         elif opcion_probabilidad == 3:
             while True:    
-                N = int(input("\nIngrese el tamaño de la población (N): "))
-                M = int(input("Ingrese cantidad de éxitos en la población (M): "))
-                n = int(input("Ingrese el tamaño de la muestra (n): "))
+                # Ingresar valores para N, M y n con manejo de errores
+                while True:
+                    try:
+                        N = int(input("\nIngrese el tamaño de la población (N): "))
+                        if N >= 1:
+                            break
+                        else:
+                            print("El tamaño de la población (N) debe ser al menos 1. Intente de nuevo.")
+                    except ValueError:
+                        print("Entrada inválida. Por favor, ingrese un número entero para N.")
 
+                while True:
+                    try:
+                        M = int(input("Ingrese cantidad de éxitos en la población (M): "))
+                        if 1 <= M <= N:
+                            break
+                        else:
+                            print("La cantidad de éxitos en la población (M) debe ser al menos 1 y no puede ser mayor que N. Intente de nuevo.")
+                    except ValueError:
+                        print("Entrada inválida. Por favor, ingrese un número entero para M.")
+
+                while True:
+                    try:
+                        n = int(input("Ingrese el tamaño de la muestra (n): "))
+                        if 1 <= n <= N:
+                            break
+                        else:
+                            print("El tamaño de la muestra (n) debe ser al menos 1 y no puede ser mayor que N. Intente de nuevo.")
+                    except ValueError:
+                        print("Entrada inválida. Por favor, ingrese un número entero para n.")
+                
                 mostrar_menu_probabilidad_especifica('hipergeometrica')
-                opcion_hipergeometrica = int(input("Seleccione el tipo de probabilidad que desea calcular: "))
+                opcion_hipergeometrica = obtener_opcion_tipo_probabilidad()
                 if opcion_hipergeometrica == 0:
                     break
 
-                k = int(input("Ingrese cantidad de éxitos buscados en la muestra (k): "))
-                    
+                # Ingresar valor para k después de seleccionar el tipo de probabilidad
+                while True:
+                    try:
+                        k = int(input("Ingrese cantidad de éxitos buscados en la muestra (k): "))
+                        if 0 <= k <= min(M, n):  # k puede ser 0 en la distribución hipergeométrica
+                            break
+                        else:
+                            print(f"La cantidad de éxitos buscados en la muestra (k) debe estar entre 0 y el menor valor entre M y n ({min(M, n)}). Intente de nuevo.")
+                    except ValueError:
+                        print("Entrada inválida. Por favor, ingrese un número entero para k.")
+                
                 probabilidad_decimal, probabilidad_porcentaje, prob_string = calcular_probabilidades_hipergeometrica(M, k, n, N, opcion_hipergeometrica)
                 print(f"\n{prob_string} = {probabilidad_decimal} ({probabilidad_porcentaje}%)")
 
@@ -430,25 +558,62 @@ def ejecutar_probabilidad():
 
         elif opcion_probabilidad == 4:
             while True:
-                m = float(input("\nIngrese media: "))
-                s = float(input("Ingrese desviación estándar (σ): "))
+                # Ingresar media y desviación estándar con manejo de errores
+                while True:
+                    try:
+                        m = float(input("\nIngrese media: "))
+                        break
+                    except ValueError:
+                        print("Entrada inválida. Por favor, ingrese un número válido para la media.")
+
+                while True:
+                    try:
+                        s = float(input("Ingrese desviación estándar (σ): "))
+                        if s > 0:
+                            break
+                        else:
+                            print("La desviación estándar (σ) debe ser mayor que 0. Intente de nuevo.")
+                    except ValueError:
+                        print("Entrada inválida. Por favor, ingrese un número válido para la desviación estándar.")
 
                 mostrar_menu_probabilidad_especifica('normal')
-                opcion_normal = int(input("Seleccione el tipo de probabilidad que desea calcular: "))
+                opcion_normal = obtener_opcion_probabilidad()
                 if opcion_normal == 0:
                     break
                 
                 if opcion_normal in [1, 2]: # Un valor
-                    a = float(input("Ingrese el valor de a: "))
-                    datos_x = [a]
+                    while True:
+                        try:
+                            a = float(input("Ingrese el valor de a: "))
+                            datos_x = [a]
+                            break
+                        except ValueError:
+                            print("Entrada inválida. Por favor, ingrese un número válido para a.")
                 elif opcion_normal in [3, 4]:  # Dos valores
-                    a = float(input("Ingrese el valor de a: "))
-                    b = float(input("Ingrese el valor de b: "))
-                    datos_x = [a, b]
-            
-                probabilidad_decimal, probabilidad_porcentaje, prob_string, z_values = calcular_distribucion_normal(m, s, datos_x, opcion_normal)
-                z_values_string = ", ".join([f"Z = {z:.4f}" for z in z_values])
+                    while True:
+                        try:
+                            a = float(input("Ingrese el valor de a: "))
+                            break
+                        except ValueError:
+                            print("Entrada inválida. Por favor, ingrese un número válido para a.")
+                    
+                    while True:
+                        try:
+                            b = float(input("Ingrese el valor de b: "))
+                            if a != b:
+                                # Asegurarse de que 'a' sea menor que 'b'
+                                if a < b:
+                                    datos_x = [a, b]
+                                else:
+                                    datos_x = [b, a]
+                                break
+                            else:
+                                print("Los valores de 'a' y 'b' no pueden ser iguales. Intente de nuevo.")
+                        except ValueError:
+                            print("Entrada inválida. Por favor, ingrese un número válido para b.")
 
+                probabilidad_decimal, probabilidad_porcentaje, prob_string, z_values = calcular_probabilidad_distribucion_normal(m, s, datos_x, opcion_normal)
+                z_values_string = ", ".join([f"Z = {z:.4f}" for z in z_values])
 
                 print(f"\nUsando los valores {z_values_string}, {prob_string} = {probabilidad_decimal} ({probabilidad_porcentaje}%)")
                 
@@ -466,7 +631,7 @@ def ejecutar_probabilidad():
 def main():
     while True:
         mostrar_menu_principal()
-        opcion_principal = int(input("Seleccione una opción: "))
+        opcion_principal = obtener_opcion_principal()
 
         if opcion_principal == 1:
             ejecutar_estadistica_descriptiva()
