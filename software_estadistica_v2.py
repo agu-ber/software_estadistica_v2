@@ -1,138 +1,216 @@
 import statistics  # Importa el módulo statistics para realizar cálculos estadísticos.
-import math
-from tabla_z import tabla_z
+from tabla_z import tabla_z # Importa la tabla Z
 
 # Constante de Euler con 20 decimales
 EULER = 2.71828182845904523536
 
 # Funciones auxiliares para probabilidades
 def factorial(x):
+    # Calcula el factorial de un número dado 'x'.
+    # Si 'x' es 0, retorna 1 porque 0! es 1 por definición.
     if x == 0:
         return 1
     resultado = 1
+    # Calcula el producto de todos los enteros positivos desde 2 hasta 'x'.
     for i in range(2, x + 1):
         resultado = resultado * i
+    # Retorna el resultado del factorial.
     return resultado
 
 def coeficiente_binomial(n, k):
+    # Calcula el coeficiente binomial (también conocido como "número combinatorio") para dos números dados 'n' y 'k'.
+    # Esto representa la cantidad de formas en que se pueden elegir 'k' elementos de un conjunto de 'n' elementos.
+    # Usa la fórmula: n! / (k! * (n-k)!)
     return factorial(n) // (factorial(k) * factorial(n - k))
 
 def formula_binomial(n, p, k):
+    # Calcula la probabilidad de obtener exactamente 'k' éxitos en 'n' ensayos independientes,
+    # cada uno con una probabilidad de éxito 'p', usando la distribución binomial.
+    # Obtiene el coeficiente binomial usando la función 'coeficiente_binomial(n, k)'.
     coeficiente = coeficiente_binomial(n, k)
+    # Aplica la fórmula de la distribución binomial: coeficiente * p^k * (1-p)^(n-k)
     distribucion_binomial = coeficiente * (p ** k) * ((1 - p) ** (n - k))
+    # Redondea el resultado a cuatro decimales y lo retorna.
     return round(distribucion_binomial, 4)
 
 def formula_poisson(u, k):
+    # Calcula la probabilidad de obtener exactamente 'k' ocurrencias en un intervalo dado
+    # según la distribución de Poisson, donde 'u' es el número promedio de ocurrencias (λ).
+    # Utiliza la fórmula de Poisson: (e^(-λ) * λ^k) / k!
     distribucion_poisson = ((EULER ** -u) * (u**k)) / factorial(k)
+    # Redondea el resultado a cuatro decimales y lo retorna.
     return round(distribucion_poisson, 4)
 
 def formula_hipergeometrica(M, k, n, N):
+    # Calcula la probabilidad de obtener exactamente 'k' éxitos en una muestra de tamaño 'n'
+    # extraída de una población de tamaño 'N' que contiene 'M' éxitos, sin reemplazo.
+    # Utiliza la fórmula de la distribución hipergeométrica.
+
+    # Calcula el coeficiente combinatorio de elegir 'k' éxitos de 'M' éxitos totales.
     coeficiente1 = coeficiente_binomial(M, k) 
+    # Calcula el coeficiente combinatorio de elegir 'n-k' fracasos del total de fracasos (N-M).
     coeficiente2 = coeficiente_binomial(N-M, n-k)
+    # Calcula el coeficiente combinatorio de elegir 'n' elementos de 'N' elementos totales.
     coeficiente3 = coeficiente_binomial(N, n)
+    # Calcula la probabilidad hipergeométrica utilizando la combinación de los coeficientes.
     distribucion_hipergeometrico = (coeficiente1 * coeficiente2) / coeficiente3
+    # Redondea el resultado a cuatro decimales y lo retorna.
     return round(distribucion_hipergeometrico, 4)
 
 def estandarizar(m, s, x):
+    # Calcula el valor Z para una distribución normal estandarizada.
+    # 'm' es la media, 's' es la desviación estándar, y 'x' es el valor de interés.
+    # La fórmula de estandarización es: Z = (x - μ) / σ
     valor_z = (x - m) / s
+    # Retorna el valor estandarizado (Z).
     return valor_z
 
 def buscar_probabilidad_z(z):
-    probabilidad = 0
+    # Busca la probabilidad acumulada para un valor Z en una tabla de distribución normal estándar.
+    # 'z' es el valor Z que se busca.
+
+    probabilidad = 0 # Inicializa la probabilidad.
 
     if z < -4:
+        # Si 'z' es menor que -4, la probabilidad es prácticamente 0.
         probabilidad = 0
     elif z > 4:
+        # Si 'z' es mayor que 4, la probabilidad es prácticamente 1.
         probabilidad = 1
     elif z in tabla_z:
+        # Si 'z' está en la tabla de valores Z precalculados, usa el valor correspondiente.
         probabilidad = tabla_z[z]
     else:
-        lower_z = max(key for key in tabla_z if key < z)
-        upper_z = min(key for key in tabla_z if key > z)
-        lower_p = tabla_z[lower_z]
-        upper_p = tabla_z[upper_z]
-        probabilidad = (lower_p + upper_p) / 2
+        # Si 'z' no está en la tabla, interpola entre los valores más cercanos para estimar la probabilidad.
+        lower_z = max(key for key in tabla_z if key < z) # Encuentra el valor Z más cercano por debajo de 'z'.
+        upper_z = min(key for key in tabla_z if key > z) # Encuentra el valor Z más cercano por encima de 'z'.
+        lower_p = tabla_z[lower_z] # Probabilidad acumulada correspondiente al valor Z inferior.
+        upper_p = tabla_z[upper_z] # Probabilidad acumulada correspondiente al valor Z superior.
+        # Promedia las probabilidades de los valores más cercanos para aproximar la probabilidad de 'z'.
+        probabilidad = (lower_p + upper_p) / 2 
 
+    # Retorna la probabilidad calculada.
     return probabilidad
 
 # Cálculos para probabilidades de la distribución binomial
 def calcular_probabilidades_binomial(n, p, k, tipo_calculo):
+    # Calcula la probabilidad de eventos usando la distribución binomial.
+    # 'n' es el número de ensayos, 'p' es la probabilidad de éxito en cada ensayo,
+    # 'k' es el número de éxitos de interés, y 'tipo_calculo' define el tipo de probabilidad a calcular.
+    
     if tipo_calculo == 1:  # P(X = k)
+        # Probabilidad de exactamente 'k' éxitos.
         probabilidad = formula_binomial(n, p, k)
         prob_string = f"P(X = {k})"
     elif tipo_calculo == 2:  # P(X < k)
+        # Probabilidad de menos de 'k' éxitos.
         probabilidad = sum(formula_binomial(n, p, i) for i in range(k))
         prob_string = f"P(X < {k})"
     elif tipo_calculo == 3:  # P(X ≤ k)
+        # Probabilidad de 'k' o menos éxitos.
         probabilidad = sum(formula_binomial(n, p, i) for i in range(k + 1))
         prob_string = f"P(X ≤ {k})"
     elif tipo_calculo == 4:  # P(X > k)
+        # Probabilidad de más de 'k' éxitos.
         probabilidad = sum(formula_binomial(n, p, i) for i in range(k + 1, n + 1))
         prob_string = f"P(X > {k})"
     elif tipo_calculo == 5:  # P(X ≥ k)
+        # Probabilidad de 'k' o más éxitos.
         probabilidad = sum(formula_binomial(n, p, i) for i in range(k, n + 1))
         prob_string = f"P(X ≥ {k})"
 
+    # Retorna la probabilidad redondeada a cuatro decimales, su valor en porcentaje y el tipo de cálculo realizado.
     return round(probabilidad, 4), round(probabilidad * 100, 2), prob_string  # Retorna en decimal y porcentaje.
 
 # Cálculos para probabilidades de la distribución Poisson
 def calcular_probabilidades_poisson(u, k, tipo_calculo):
+    # Calcula la probabilidad de eventos usando la distribución de Poisson.
+    # 'u' es el número medio de ocurrencias en un intervalo, 'k' es el número de ocurrencias de interés,
+    # y 'tipo_calculo' define el tipo de probabilidad a calcular.
+
     if tipo_calculo == 1:  # P(X = k)
+        # Probabilidad de exactamente 'k' éxitos.
         probabilidad = formula_poisson(u, k)
         prob_string = f"P(X = {k})"
     elif tipo_calculo == 2:  # P(X < k)
+        # Probabilidad de menos de 'k' éxitos.
         probabilidad = sum(formula_poisson(u, i) for i in range(k))
         prob_string = f"P(X < {k})"
     elif tipo_calculo == 3:  # P(X ≤ k)
+        # Probabilidad de 'k' o menos éxitos.
         probabilidad = sum(formula_poisson(u, i) for i in range(k + 1))
         prob_string = f"P(X ≤ {k})"
     elif tipo_calculo == 4:  # P(X > k)
+        # Probabilidad de más de 'k' éxitos. Se amplía el rango de cálculo.
         probabilidad = sum(formula_poisson(u, i) for i in range(k + 1, int(u * 10)))  # Rango ampliado
         prob_string = f"P(X > {k})"
     elif tipo_calculo == 5:  # P(X ≥ k)
+        # Probabilidad de 'k' o más éxitos. Se amplía el rango de cálculo.
         probabilidad = sum(formula_poisson(u, i) for i in range(k, int(u * 10)))  # Rango ampliado
         prob_string = f"P(X ≥ {k})"
 
+    # Retorna la probabilidad redondeada a cuatro decimales, su valor en porcentaje y el tipo de cálculo realizado.
     return round(probabilidad, 4), round(probabilidad * 100, 2), prob_string  # Retorna en decimal y porcentaje.
 
 # Cálculos para probabilidades de la distribución hipergeométrica
 def calcular_probabilidades_hipergeometrica(M, k, n, N, tipo_calculo):
+    # Calcula la probabilidad de eventos usando la distribución hipergeométrica.
+    # 'M' es el número total de éxitos en la población, 'k' es el número de éxitos deseados,
+    # 'n' es el tamaño de la muestra, 'N' es el tamaño de la población, y 'tipo_calculo' define el tipo de probabilidad a calcular.
+
     if tipo_calculo == 1: # P(X = k)
+        # Probabilidad de exactamente 'k' éxitos.
         probabilidad = formula_hipergeometrica(M, k, n, N)
         prob_string = f"P(X = {k})"
     elif tipo_calculo == 2: # P(X < k)
+        # Probabilidad de menos de 'k' éxitos.
         probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k))
         prob_string = f"P(X < {k})"
     elif tipo_calculo == 3: # P(X ≤ k)
+        # Probabilidad de 'k' o menos éxitos.
         probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k + 1))
         prob_string = f"P(X ≤ {k})"
     elif tipo_calculo == 4: # P(X > k)
+        # Probabilidad de más de 'k' éxitos. Calcula el mínimo entre 'n' (tamaño de la muestra) y 'M' (número de éxitos en la población).
         probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k + 1, min(n, M))) # Se calcula el mínimo entre el tamaño de la muestra y el número de éxitos en la población
         prob_string = f"P(X > {k})"
     elif tipo_calculo == 5: # P(X ≥ k)
+        # Probabilidad de 'k' o más éxitos. Calcula el mínimo entre 'n' y 'M'.
         probabilidad = sum(formula_hipergeometrica(M, i, n, N) for i in range(k, min(n, M)))
         prob_string = f"P(X ≥ {k})"
 
+    # Retorna la probabilidad redondeada a cuatro decimales, su valor en porcentaje y el tipo de cálculo realizado.
     return round(probabilidad, 4), round(probabilidad * 100, 2), prob_string
 
 # Cálculos de las probabilidades para la distribución normal
 def calcular_probabilidad_distribucion_normal(m, s, datos_x, tipo_probabilidad):
+    # Calcula la probabilidad de eventos usando la distribución normal.
+    # 'm' es la media de la distribución, 's' es la desviación estándar,
+    # 'datos_x' son los valores a evaluar, y 'tipo_probabilidad' define el tipo de probabilidad a calcular.
+
+    # Calcula los valores Z correspondientes a los datos de entrada.
     z_values = [estandarizar(m, s, x) for x in datos_x]
+    # Busca las probabilidades acumuladas correspondientes a cada valor Z.
     resultados = [buscar_probabilidad_z(z) for z in z_values]
 
     if tipo_probabilidad == 1:  # P(x > a)
+        # Probabilidad de que el valor sea mayor que 'a'.
         probabilidad = 1 - resultados[0]
         prob_string = f"P(X > {datos_x[0]})"
     elif tipo_probabilidad == 2:  # P(x < a)
+        # Probabilidad de que el valor sea menor que 'a'.
         probabilidad = resultados[0]
         prob_string = f"P(X < {datos_x[0]})"
     elif tipo_probabilidad == 3:  # P(a < x < b)
+        # Probabilidad de que el valor esté entre 'a' y 'b'.
         probabilidad = resultados[1] - resultados[0]
         prob_string = f"P({datos_x[0]} < X < {datos_x[1]})"
     elif tipo_probabilidad == 4:  # P(x < a or x > b)
+        # Probabilidad de que el valor esté fuera del rango [a, b].
         probabilidad = resultados[0] + (1 - resultados[1])
         prob_string = f"P(X < {datos_x[0]} o X > {datos_x[1]})"
 
+    # Retorna la probabilidad redondeada a cuatro decimales, su valor en porcentaje, el tipo de cálculo realizado y los valores Z utilizados.
     return round(probabilidad, 4), round(probabilidad * 100, 2), prob_string, z_values
 
 # Dividir datos ingresados
@@ -294,54 +372,43 @@ def mostrar_menu_probabilidad_especifica(tipo_distribucion):
     print("0. Volver al menú de probabilidad")
 
 # Validaciones para los inputs
-
-def obtener_opcion_principal():
-    while True:
-        try:
-            opcion_principal = int(input("Seleccione una opción: "))
-            if opcion_principal in [0, 1, 2]:
-                return opcion_principal
-            else:
-                print("Por favor, seleccione una opción válida (0, 1 o 2).")
-        except ValueError:
-            print("Entrada no válida. Por favor, ingrese un número.")
-
 def obtener_opciones_estadistica():
+    """
+    Solicita al usuario que ingrese una o más opciones para el cálculo de estadísticas y valida la entrada.
+
+    :return: Lista de opciones seleccionadas por el usuario que son válidas.
+    """
     while True:
         opciones = input("Seleccione una o más opciones separadas por comas (ej. 1,2,5): ").split(',')
         opciones_validas = True
         opciones_limpias = []
         
         for opcion in opciones:
-            opcion = opcion.strip()
-            if opcion.isdigit() and 0 <= int(opcion) <= 14:
-                opciones_limpias.append(opcion)
+            opcion = opcion.strip() # Remueve espacios en blanco alrededor de la entrada
+            if opcion.isdigit() and 0 <= int(opcion) <= 14: # Verifica que la entrada sea un número entre 0 y 14
+                opciones_limpias.append(opcion) # Agrega la opción válida a la lista
             else:
                 print(f"Opción '{opcion}' no válida. Intente de nuevo.")
-                opciones_validas = False
+                opciones_validas = False # Indica que hubo una opción no válida
         
         if opciones_validas:
-            return opciones_limpias
+            return opciones_limpias # Devuelve la lista de opciones si todas son válidas
         
-def obtener_opcion_probabilidad():
-    while True:
-        try:
-            opcion_probabilidad = int(input("Seleccione una opción: "))
-            if opcion_probabilidad in [0, 1, 2, 3, 4]:
-                return opcion_probabilidad
-            else:
-                print("Por favor, seleccione una opción válida (0, 1, 2, 3 o 4).")
-        except ValueError:
-            print("Entrada no válida. Por favor, ingrese un número.")
+def obtener_opcion_valida(mensaje, opciones_validas):
+    """
+    Solicita al usuario que ingrese una opción y valida que esté en el rango de opciones válidas.
 
-def obtener_opcion_tipo_probabilidad():
+    :param mensaje: El mensaje que se muestra al usuario para solicitar la opción.
+    :param opciones_validas: Lista de opciones válidas que el usuario puede ingresar.
+    :return: La opción seleccionada por el usuario que es válida.
+    """
     while True:
         try:
-            opcion_tipo_probabilidad = int(input("Seleccione una opción: "))
-            if opcion_tipo_probabilidad in [0, 1, 2, 3, 4, 5]:
-                return opcion_tipo_probabilidad
+            opcion = int(input(mensaje))
+            if opcion in opciones_validas:
+                return opcion
             else:
-                print("Por favor, seleccione una opción válida (0, 1, 2, 3, 4 o 5).")
+                print(f"Por favor, seleccione una opción válida ({', '.join(map(str, opciones_validas))}).")
         except ValueError:
             print("Entrada no válida. Por favor, ingrese un número.")                        
 
@@ -415,7 +482,7 @@ def ejecutar_estadistica_descriptiva():
 def ejecutar_probabilidad():
     while True:
         mostrar_menu_probabilidad()
-        opcion_probabilidad = obtener_opcion_probabilidad()
+        opcion_probabilidad = obtener_opcion_valida("Seleccione una opción: ", [0, 1, 2, 3, 4])
 
         if opcion_probabilidad == 1:
             while True:
@@ -442,7 +509,7 @@ def ejecutar_probabilidad():
                         print("Entrada no válida. Ingrese un número decimal para p.")
                 
                 mostrar_menu_probabilidad_especifica('binomial')
-                opcion_binomial = obtener_opcion_tipo_probabilidad()
+                opcion_binomial = obtener_opcion_valida("Seleccione una opción: ", [0, 1, 2, 3, 4, 5])
                 if opcion_binomial == 0:
                     break
 
@@ -478,7 +545,7 @@ def ejecutar_probabilidad():
                         print("Entrada no válida. Ingrese un número decimal positivo para λ.")
 
                 mostrar_menu_probabilidad_especifica('poisson')
-                opcion_poisson = obtener_opcion_tipo_probabilidad()
+                opcion_poisson = obtener_opcion_valida("Seleccione una opción: ", [0, 1, 2, 3, 4, 5])
                 if opcion_poisson == 0:
                     break
 
@@ -534,7 +601,7 @@ def ejecutar_probabilidad():
                         print("Entrada inválida. Por favor, ingrese un número entero para n.")
                 
                 mostrar_menu_probabilidad_especifica('hipergeometrica')
-                opcion_hipergeometrica = obtener_opcion_tipo_probabilidad()
+                opcion_hipergeometrica = obtener_opcion_valida("Seleccione una opción: ", [0, 1, 2, 3, 4, 5])
                 if opcion_hipergeometrica == 0:
                     break
 
@@ -577,7 +644,7 @@ def ejecutar_probabilidad():
                         print("Entrada inválida. Por favor, ingrese un número válido para la desviación estándar.")
 
                 mostrar_menu_probabilidad_especifica('normal')
-                opcion_normal = obtener_opcion_probabilidad()
+                opcion_normal = obtener_opcion_valida("Seleccione una opción: ", [0, 1, 2, 3, 4])
                 if opcion_normal == 0:
                     break
                 
@@ -631,7 +698,7 @@ def ejecutar_probabilidad():
 def main():
     while True:
         mostrar_menu_principal()
-        opcion_principal = obtener_opcion_principal()
+        opcion_principal = obtener_opcion_valida("Seleccione una opción: ", [0, 1, 2])
 
         if opcion_principal == 1:
             ejecutar_estadistica_descriptiva()
